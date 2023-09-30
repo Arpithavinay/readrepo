@@ -1,0 +1,35 @@
+pipeline
+{
+    agent any
+    stages
+    {
+        stage('parallel stage')
+        {
+            parallel
+            {
+                stage('stage A')
+                {
+                    steps
+                    {
+                        echo 'running A'
+                    }
+                }
+                    stage('stage B')
+                {
+                    steps
+                    {
+                        echo 'running B'
+                    }
+                }
+                 stage('stage C')
+                {
+                    steps
+                    {
+                        echo 'running C'
+                    }
+                }
+            }
+            
+        }
+    }
+}

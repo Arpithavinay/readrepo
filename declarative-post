@@ -1,0 +1,71 @@
+pipeline 
+{
+     agent any
+     stages
+     {
+        stage('continuous download')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        git 'https://github.com/keshavr21/maven_test.git'
+                    }
+                    catch(Exception e1)
+                    {
+                        mail bcc: '', body: 'Sorry, will retry again', cc: 'msrtth@gmail.com', from: '', replyTo: '', subject: 'Build failure', to: 'arpitha170596@gmail.com'
+                        exit (1)
+                    }
+                }
+               
+            }
+        }
+        stage('continuous build')
+        {
+            steps
+            {
+               sh '/opt/maven/bin/mvn clean package' 
+            }
+        }
+        stage('continuous deploy')
+        {
+            steps
+            {
+               deploy adapters: [tomcat9(credentialsId: 'ca296240-5487-4311-9a59-80dd5fe3b688', path: '', url: 'http://3.110.81.100:8080/')], contextPath: 'parallel', war: '**/*.war' 
+            }
+        }
+        stage('continuous testing')
+        {
+            steps
+            {
+               git 'https://github.com/keshavr21/test_cases.git'
+               sh 'java -jar testing.jar $WORKSPACE/webapp/target/webapp.war' 
+            }
+        }
+       
+     }
+     post
+     {
+        success
+        {
+              input message: 'WAITING FOR APPROVAL FROM DM', submitter: 'aarvi'
+              deploy adapters: [tomcat9(credentialsId: 'ca296240-5487-4311-9a59-80dd5fe3b688', path: '', url: 'http://3.110.81.100:8080/')], contextPath: 'parallel', war: '**/*.war'
+        }
+        failure
+        {
+           mail bcc: '', body: 'Sorry, will retry again', cc: 'msrtth@gmail.com', from: '', replyTo: '', subject: 'Build failure', to: 'arpitha170596@gmail.com'
+        }
+        always
+        {
+            sh 'echo TO CHECK POLL SCM'
+        }
+        aborted
+        {
+            sh 'echo THIS WILL EXECUTE DURING ABORT'
+        }
+         
+     }
+     
+} 

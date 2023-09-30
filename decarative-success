@@ -1,0 +1,58 @@
+pipeline 
+{
+     agent any
+         tools
+    {
+        jdk 'jdk11'
+        maven 'maven3'
+    }
+     stages
+     {
+        stage('continuous download')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        git 'https://github.com/keshavr21/maven_test.git'
+                    }
+                    catch(Exception e1)
+                    {
+                        mail bcc: '', body: 'Sorry, will retry again', cc: 'msrtth@gmail.com', from: '', replyTo: '', subject: 'Build failure', to: 'arpitha170596@gmail.com'
+                        exit (1)
+                    }
+                }
+               
+            }
+        }
+     
+        stage('compile') 
+        {
+            steps 
+            {
+                sh "mvn clean package -DskipTests=true"
+            }
+        }
+    }
+    post
+     {
+        success
+        {
+             sh 'echo success'
+        }
+        failure
+        {
+           mail bcc: '', body: 'Sorry, will retry again', cc: 'msrtth@gmail.com', from: '', replyTo: '', subject: 'Build failure', to: 'arpitha170596@gmail.com'
+        }
+        always
+        {
+            sh 'echo TO CHECK POLL SCM'
+        }
+        aborted
+        {
+            sh 'echo THIS WILL EXECUTE DURING ABORT'
+        }
+     }
+ }

@@ -1,0 +1,27 @@
+FROM centos:7
+
+MAINTAINER MSR
+
+RUN yum install git -y
+
+
+#link----> https://medium.com/@raguyazhin/step-by-step-guide-to-install-apache-tomcat-on-amazon-linux-120748a151a9
+
+
+RUN yum install java-1.8* -y
+
+RUN mkdir /opt/tomcat/
+
+WORKDIR /opt/tomcat
+
+RUN yum install wget -y
+
+RUN wget https://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.80/bin/apache-tomcat-9.0.80.tar.gz
+
+RUN tar -zvxf apache-tomcat-9.0.80.tar.gz
+
+RUN mv apache-tomcat-9.0.80/* /opt/tomcat/.
+
+EXPOSE 8080
+
+CMD ["/opt/tomcat/bin/catalina.sh", "run"]

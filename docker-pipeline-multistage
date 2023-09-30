@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+    tools
+        {
+        maven "Maven"
+        }
+
+    stages {
+        stage('checkout') 
+        {
+                steps {
+
+                    git branch: 'master', url: 'https://github.com/RanganathMS/multi-stage-example.git'            
+                     }
+        }
+
+        stage('Execute Maven') 
+        {
+                steps {
+                        sh 'mvn clean package'             
+                      }
+        }
+        stage('Docker Build and Tag') 
+        {
+                steps {
+
+ 
+
+                    sh 'docker build -t multistage:latest .'
+                    //sh 'docker tag webapplication:latest gowthampatil/dockercicd:latest'
+                    sh 'docker tag multistage:latest ranganath09/multistage:$BUILD_NUMBER'
+                }
+        }
+        stage('Publish image to Docker Hub') 
+        {
+                steps {
+                        withDockerRegistry([ credentialsId: "6e367bb8-bebe-4780-a32f-8b36e1a3398a", url: "https://index.docker.io/v1/" ])
+                        {
+                        //sh  'docker push gowthampatil/dockercicd:latest'
+                          sh  'docker push ranganath09/multistage:$BUILD_NUMBER'
+                        }        
+                      }
+        }
+
+ 
+
+stage('Stop Container by Port') 
+       {
+            steps {
+                script {
+                    // Define the port number of the container you want to stop
+                    def targetPort = '8200' // Replace with your port number
+
+ 
+
+                    // Use the docker ps command to list running containers
+                    def containerInfo = sh(script: "docker ps --filter publish=$targetPort --format {{.ID}}", returnStdout: true).trim()
+
+ 
+
+                    if (containerInfo) {
+                        // Stop the container using its ID
+                        sh "docker stop $containerInfo"
+                        sh "docker rm $containerInfo "
+                    } else {
+                        echo "No container found running on port $targetPort"
+                    }
+                }
+            }
+        }    
+
+ 
+
+        stage('Run Docker container on Jenkins Agent')
+        {
+                steps {
+                        sh "docker run -d -p 8200:8080 ranganath09/multistage:$BUILD_NUMBER"
+                      }
+        }
+        stage('Stop and Remove Previous Docker Container') {
+            steps {
+                script {
+                    containerId = sh'docker ps --format "{{.ID}}"'
+                    if (containerId) {
+                        sh "docker stop $containerId"
+                        sh "docker rm $containerId"
+                    }
+                }
+            }
+        }
+
+
+ 
+
+           }
+}
